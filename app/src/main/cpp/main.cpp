@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <string>
 
+#include "core.hpp"
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_aaratha_inertica_MainActivity_stringFromJNI(
         JNIEnv* env,

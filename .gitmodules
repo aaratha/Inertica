@@ -1,0 +1,3 @@
+[submodule "app/src/main/cpp/external/miniaudio"]
+	path = app/src/main/cpp/external/miniaudio
+	url = https://github.com/mackron/miniaudio

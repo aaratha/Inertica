@@ -26,14 +26,29 @@ project("inertica")
 # used in the AndroidManifest.xml file.
 
 
+
+
+add_subdirectory(core)
+
+add_subdirectory(external/miniaudio)
+
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+        main.cpp)
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
+
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/miniaudio
+)
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
         android
+        miniaudio
+        GLESv2
         log)
