@@ -5,25 +5,14 @@ import android.os.Bundle
 import android.widget.TextView
 import com.aaratha.inertica.databinding.ActivityMainBinding
 
+
+
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityMainBinding
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        // Example of a call to a native method
-        binding.sampleText.text = stringFromJNI()
-    }
 
     /**
      * A native method that is implemented by the 'inertica' native library,
      * which is packaged with this application.
      */
-    external fun stringFromJNI(): String
 
     companion object {
         // Used to load the 'inertica' library on application startup.
@@ -31,4 +20,43 @@ class MainActivity : AppCompatActivity() {
             System.loadLibrary("inertica")
         }
     }
+
+    external fun nativeInit()
+    external fun nativeUpdate()
+    external fun nativePause()
+    external fun nativeResume()
+
+    private lateinit var binding: ActivityMainBinding
+
+    private val updateHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val updateRunnable = object : Runnable {
+        override fun run() {
+            nativeUpdate()
+            updateHandler.postDelayed(this, 16) // ~60 fps
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        System.loadLibrary("inertica")
+
+        nativeInit()
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        nativeResume()
+        updateHandler.post(updateRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nativePause()
+        updateHandler.removeCallbacks(updateRunnable)
+    }
+
 }
