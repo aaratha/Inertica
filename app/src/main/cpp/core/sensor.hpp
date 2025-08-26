@@ -14,7 +14,6 @@ class SensorManager {
     ASensorManager *manager;
     const ASensor *accelerometer;
     ASensorEventQueue *eventQueue;
-    ALooper *looper;
 
     Vec3 sensorData[SENSOR_HISTORY_LENGTH * 2];
     Vec3 sensorDataFilter;
@@ -23,7 +22,7 @@ class SensorManager {
 public:
     ASensorManager *AcquireASensorManagerInstance(void);
 
-    void init();
+    void init(ALooper* looper);
     void update();
     void pause();
     void resume();

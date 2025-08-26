@@ -20,13 +20,13 @@ ASensorManager *SensorManager::AcquireASensorManagerInstance(void) {
     return getInstanceFunc();
 }
 
-void SensorManager::init() {
+void SensorManager::init(ALooper* looper) {
     manager = AcquireASensorManagerInstance();
     assert(manager != NULL);
     accelerometer = ASensorManager_getDefaultSensor(manager,
                                                     ASENSOR_TYPE_ACCELEROMETER);
     assert(accelerometer != NULL);
-    looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+    // looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
     assert(looper != NULL);
     eventQueue = ASensorManager_createEventQueue(
             manager, looper, LOOPER_ID_USER, NULL, NULL);
@@ -41,7 +41,7 @@ void SensorManager::init() {
 }
 
 void SensorManager::update() {
-    ALooper_pollOnce(0, NULL, NULL, NULL);
+    //ALooper_pollOnce(0, NULL, NULL, NULL);
     ASensorEvent event;
     float a = SENSOR_FILTER_ALPHA;
     while (ASensorEventQueue_getEvents(eventQueue, &event, 1) > 0) {

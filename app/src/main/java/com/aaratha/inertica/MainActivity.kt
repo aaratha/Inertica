@@ -3,16 +3,14 @@ package com.aaratha.inertica
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.TextView
-import com.aaratha.inertica.databinding.ActivityMainBinding
+import android.opengl.GLSurfaceView
+import android.content.res.AssetManager
+import javax.microedition.khronos.opengles.GL10
+import javax.microedition.khronos.egl.EGLConfig
 
 
 
 class MainActivity : AppCompatActivity() {
-
-    /**
-     * A native method that is implemented by the 'inertica' native library,
-     * which is packaged with this application.
-     */
 
     companion object {
         // Used to load the 'inertica' library on application startup.
@@ -21,42 +19,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    external fun nativeInit()
-    external fun nativeUpdate()
+    external fun nativeInit(assetManager: AssetManager)
     external fun nativePause()
     external fun nativeResume()
 
-    private lateinit var binding: ActivityMainBinding
+    external fun nativeSurfaceCreated()
+    external fun nativeSurfaceChanged(width: Int, height: Int)
+    external fun nativeDrawFrame()
 
-    private val updateHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            nativeUpdate()
-            updateHandler.postDelayed(this, 16) // ~60 fps
-        }
-    }
+    private lateinit var glSurfaceView: GLSurfaceView  // <-- declare it here
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         System.loadLibrary("inertica")
 
-        nativeInit()
+        glSurfaceView = GLSurfaceView(this)
+        glSurfaceView.setEGLContextClientVersion(2)
+        glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
+            override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+                nativeSurfaceCreated()
+            }
+            override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) { nativeSurfaceChanged(width, height) }
+            override fun onDrawFrame(gl: GL10?) { nativeDrawFrame() }
+        })
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-    }
+        setContentView(glSurfaceView)  // set the GLSurfaceView as the root view
+        nativeInit(assets)
 
-
-    override fun onResume() {
-        super.onResume()
-        nativeResume()
-        updateHandler.post(updateRunnable)
     }
 
     override fun onPause() {
         super.onPause()
         nativePause()
-        updateHandler.removeCallbacks(updateRunnable)
+        glSurfaceView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nativeResume()
+        glSurfaceView.onResume()
     }
 
 }

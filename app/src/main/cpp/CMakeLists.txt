@@ -35,6 +35,7 @@ add_subdirectory(external/miniaudio)
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         core/sensor.cpp
+        core/graphics.cpp
         main.cpp)
 
 # Specifies libraries CMake should link to your target library. You
