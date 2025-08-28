@@ -6,25 +6,25 @@ ASensorManager *SensorManager::AcquireASensorManagerInstance(void) {
     typedef ASensorManager *(*PF_GETINSTANCEFORPACKAGE)(const char *name);
     void *androidHandle = dlopen("libandroid.so", RTLD_NOW);
     PF_GETINSTANCEFORPACKAGE getInstanceForPackageFunc =
-            (PF_GETINSTANCEFORPACKAGE)dlsym(androidHandle,
-                                            "ASensorManager_getInstanceForPackage");
+            (PF_GETINSTANCEFORPACKAGE) dlsym(androidHandle,
+                                             "ASensorManager_getInstanceForPackage");
     if (getInstanceForPackageFunc) {
         return getInstanceForPackageFunc(kPackageName);
     }
 
     typedef ASensorManager *(*PF_GETINSTANCE)();
     PF_GETINSTANCE getInstanceFunc =
-            (PF_GETINSTANCE)dlsym(androidHandle, "ASensorManager_getInstance");
+            (PF_GETINSTANCE) dlsym(androidHandle, "ASensorManager_getInstance");
     // by all means at this point, ASensorManager_getInstance should be available
     assert(getInstanceFunc);
     return getInstanceFunc();
 }
 
-void SensorManager::init(ALooper* looper) {
+void SensorManager::init(ALooper *looper) {
     manager = AcquireASensorManagerInstance();
     assert(manager != NULL);
     accelerometer = ASensorManager_getDefaultSensor(manager,
-                                                    ASENSOR_TYPE_ACCELEROMETER);
+                                                    ASENSOR_TYPE_LINEAR_ACCELERATION);
     assert(accelerometer != NULL);
     // looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
     assert(looper != NULL);
@@ -37,7 +37,7 @@ void SensorManager::init(ALooper* looper) {
     status = ASensorEventQueue_setEventRate(
             eventQueue, accelerometer, SENSOR_REFRESH_PERIOD_US);
     assert(status >= 0);
-    (void)status;  // to silent unused compiler warning
+    (void) status;  // to silent unused compiler warning
 }
 
 void SensorManager::update() {
@@ -52,6 +52,8 @@ void SensorManager::update() {
         sensorDataFilter.z =
                 a * event.acceleration.z + (1.0f - a) * sensorDataFilter.z;
     }
+    latestFiltered = sensorDataFilter;
+
     sensorData[sensorDataIndex] = sensorDataFilter;
     sensorData[SENSOR_HISTORY_LENGTH + sensorDataIndex] = sensorDataFilter;
     sensorDataIndex = (sensorDataIndex + 1) % SENSOR_HISTORY_LENGTH;
@@ -64,7 +66,8 @@ void SensorManager::pause() {
 void SensorManager::resume() {
     if (!eventQueue || !accelerometer) {
         __android_log_print(ANDROID_LOG_ERROR, "sensor",
-                            "resume() called before init(): queue=%p accel=%p", eventQueue, accelerometer);
+                            "resume() called before init(): queue=%p accel=%p", eventQueue,
+                            accelerometer);
         return;
     }
     int status = ASensorEventQueue_enableSensor(eventQueue, accelerometer);
@@ -79,7 +82,7 @@ void SensorManager::resume() {
     }
 }
 
-const Vec3* SensorManager::getData() {
+const Vec3 *SensorManager::getData() {
     return sensorData;
 }
 

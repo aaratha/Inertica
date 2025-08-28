@@ -20,14 +20,20 @@ class SensorManager {
     int sensorDataIndex;
 
 public:
+    Vec3 latestFiltered;
+
     ASensorManager *AcquireASensorManagerInstance(void);
 
-    void init(ALooper* looper);
+    void init(ALooper *looper);
+
     void update();
+
     void pause();
+
     void resume();
 
-    const Vec3* getData();
+    const Vec3 *getData();
+
     const int getIndex();
 };
 

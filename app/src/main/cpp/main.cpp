@@ -7,6 +7,7 @@
 
 static SensorManager gSensor;
 static GraphicsManager gGraphics;
+static AudioManager gAudio;
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "Inertica", __VA_ARGS__)
 
@@ -15,16 +16,17 @@ JNIEXPORT void JNICALL
 Java_com_aaratha_inertica_MainActivity_nativeInit(JNIEnv *env, jobject type, jobject assetManager) {
     (void) type;
     AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, assetManager);
-    ALooper* mainLooper = ALooper_forThread(); // must be called on main thread
+    ALooper *mainLooper = ALooper_forThread(); // must be called on main thread
     if (!mainLooper) {
         ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
         mainLooper = ALooper_forThread();
     }
     gSensor.init(mainLooper);
     gGraphics.init(nativeAssetManager);
+    gAudio.init();
 }
 
-JNIEXPORT void JNICALL 
+JNIEXPORT void JNICALL
 Java_com_aaratha_inertica_MainActivity_nativeSurfaceCreated(
         JNIEnv *env, jobject type) {
     (void) env;
@@ -48,8 +50,9 @@ Java_com_aaratha_inertica_MainActivity_nativeDrawFrame(JNIEnv *env, jobject type
     (void) env;
     (void) type;
     gSensor.update();
-    const Vec3* sensorData = gSensor.getData();
+    const Vec3 *sensorData = gSensor.getData();
     int sensorDataIndex = gSensor.getIndex();
+    gAudio.update(gSensor.latestFiltered);
     gGraphics.render(sensorData, sensorDataIndex);
     // LOGI("Accel: x=%.3f y=%.3f z=%.3f", accel.x, accel.y, accel.z);
 }
