@@ -52,7 +52,7 @@ Java_com_aaratha_inertica_MainActivity_nativeDrawFrame(JNIEnv *env, jobject type
     gSensor.update();
     const Vec3 *sensorData = gSensor.getData();
     int sensorDataIndex = gSensor.getIndex();
-    gAudio.update(gSensor.latestFiltered);
+    gAudio.updateFrequency(gSensor.latestFiltered);
     gGraphics.render(sensorData, sensorDataIndex);
     // LOGI("Accel: x=%.3f y=%.3f z=%.3f", accel.x, accel.y, accel.z);
 }

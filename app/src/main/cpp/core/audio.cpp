@@ -4,6 +4,9 @@
 
 #include "miniaudio.h"
 
+// Definition of the static member
+Oscillator AudioManager::gOsc;
+
 void AudioManager::init() {
     if (audioInitialized) return;
 
@@ -11,8 +14,8 @@ void AudioManager::init() {
     deviceConfig.playback.format = DEVICE_FORMAT;
     deviceConfig.playback.channels = DEVICE_CHANNELS;
     deviceConfig.sampleRate = DEVICE_SAMPLE_RATE;
-    deviceConfig.dataCallback = data_callback;
-    deviceConfig.pUserData = &sineWave;
+    deviceConfig.dataCallback = audio_callback;
+    deviceConfig.pUserData = &gOsc;
 
     if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
         //LOGI("Failed to initialize audio device");
@@ -40,14 +43,36 @@ void AudioManager::init() {
 }
 
 
-void AudioManager::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                                 ma_uint32 frameCount) {
-    ma_waveform *pSineWave = (ma_waveform *) pDevice->pUserData;
-    ma_waveform_read_pcm_frames(pSineWave, pOutput, frameCount, nullptr);
+void AudioManager::audio_callback(ma_device *pDevice, void *pOutput, const void *pInput,
+                                  ma_uint32 frameCount) {
+    Oscillator *osc = (Oscillator *) pDevice->pUserData;
+    float *out = (float *) pOutput;
+    float sr = (float) pDevice->sampleRate;
+
+    float freq = osc->prevFreq.load();
+    float nextFreq = osc->nextFreq.load();
+    float step = (nextFreq - freq) / (float) frameCount;
+
+    for (ma_uint32 i = 0; i < frameCount; i++) {
+        freq += step;
+
+        float amp = osc->amp.load();
+
+        float sample = amp * sinf(2.0f * M_PI * osc->phase);
+        osc->phase += freq / sr;
+        if (osc->phase >= 1.0f) osc->phase -= 1.0f;
+
+        // stereo
+        *out++ = sample;
+        *out++ = sample;
+    }
+
+    osc->prevFreq.store(freq);
+
     (void) pInput;
 }
 
-void AudioManager::update(Vec3 latestFiltered) {
+void AudioManager::updateFrequency(Vec3 latestFiltered) {
     if (!audioInitialized) return;
 
 
@@ -67,5 +92,7 @@ void AudioManager::update(Vec3 latestFiltered) {
     float freq = minFreq + t * (maxFreq - minFreq);
 
     // ma_waveform_set_amplitude(&sineWave, amp);
-    ma_waveform_set_frequency(&sineWave, freq);
+    // ma_waveform_set_frequency(&sineWave, freq);
+
+    gOsc.nextFreq.store(freq);
 }
