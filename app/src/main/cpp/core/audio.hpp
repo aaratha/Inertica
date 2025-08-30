@@ -13,7 +13,8 @@
 struct Oscillator {
     std::atomic<float> prevFreq{220.0f};
     std::atomic<float> nextFreq{220.0f};
-    std::atomic<float> amp{0.2f};
+    std::atomic<float> prevAmp{0.2f};
+    std::atomic<float> nextAmp{0.2f};
     float phase = 0.0f;   // not atomic, only used inside callback
 };
 
@@ -29,6 +30,9 @@ class AudioManager {
 public:
 
     void init();
+
+    static void
+    setAudioState(Oscillator &osc, float amp, float freq, float sampleRate, float *&out);
 
     static void
     audio_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount);

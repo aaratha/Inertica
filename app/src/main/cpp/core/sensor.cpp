@@ -47,13 +47,10 @@ void SensorManager::update() {
     while (ASensorEventQueue_getEvents(eventQueue, &event, 1) > 0) {
         sensorDataFilter.x =
                 a * event.acceleration.x + (1.0f - a) * sensorDataFilter.x;
-        sensorDataFilter.x = fabs(sensorDataFilter.x);
         sensorDataFilter.y =
                 a * event.acceleration.y + (1.0f - a) * sensorDataFilter.y;
-        sensorDataFilter.y = fabs(sensorDataFilter.y);
         sensorDataFilter.z =
                 a * event.acceleration.z + (1.0f - a) * sensorDataFilter.z;
-        sensorDataFilter.z = sensorDataFilter.z;
     }
     latestFiltered = sensorDataFilter;
 

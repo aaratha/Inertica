@@ -17,3 +17,10 @@ struct Vec3 {
     GLfloat y;
     GLfloat z;
 };
+
+// Map x from [inMin, inMax] to [outMin, outMax]
+inline float mapRange(float x, float inMin, float inMax, float outMin, float outMax) {
+    float t = (x - inMin) / (inMax - inMin);   // normalize to 0..1
+    return outMin + t * (outMax - outMin);     // scale to output range
+}
+

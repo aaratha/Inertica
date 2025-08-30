@@ -42,31 +42,41 @@ void AudioManager::init() {
     //LOGI("Audio device started!");
 }
 
+void
+AudioManager::setAudioState(Oscillator &osc, float amp, float freq, float sampleRate, float *&out) {
+
+    float sample = amp * sinf(2.0f * M_PI * osc.phase);
+    osc.phase += freq / sampleRate;
+    if (osc.phase >= 1.0f) osc.phase -= 1.0f;
+
+    // stereo
+    *out++ = sample;
+    *out++ = sample;
+}
 
 void AudioManager::audio_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                                   ma_uint32 frameCount) {
     Oscillator *osc = (Oscillator *) pDevice->pUserData;
     float *out = (float *) pOutput;
-    float sr = (float) pDevice->sampleRate;
+    float sampleRate = (float) pDevice->sampleRate;
+
+
+    float amp = osc->prevAmp.load();
+    float nextAmp = osc->nextAmp.load();
+    float stepAmp = (nextAmp - amp) / (float) frameCount;
 
     float freq = osc->prevFreq.load();
     float nextFreq = osc->nextFreq.load();
-    float step = (nextFreq - freq) / (float) frameCount;
+    float stepFreq = (nextFreq - freq) / (float) frameCount;
 
     for (ma_uint32 i = 0; i < frameCount; i++) {
-        freq += step;
+        amp += stepAmp;
+        freq += stepFreq;
 
-        float amp = osc->amp.load();
-
-        float sample = amp * sinf(2.0f * M_PI * osc->phase);
-        osc->phase += freq / sr;
-        if (osc->phase >= 1.0f) osc->phase -= 1.0f;
-
-        // stereo
-        *out++ = sample;
-        *out++ = sample;
+        setAudioState(*osc, amp, freq, sampleRate, out);
     }
 
+    osc->prevAmp.store(amp);
     osc->prevFreq.store(freq);
 
     (void) pInput;
@@ -76,23 +86,22 @@ void AudioManager::updateFrequency(Vec3 latestFiltered) {
     if (!audioInitialized) return;
 
 
-    float accelX = fabs(latestFiltered.x);
-    accelX = ma_clamp(accelX, 0.0f, 5.0f);
+    float minAcc = -6.0f, maxAcc = 6.0f;
 
-    float accelZ = ma_clamp(latestFiltered.z, -5.0f, 5.0f);
+    float accelX = ma_clamp(latestFiltered.x * 1.3, minAcc, maxAcc);
+    float accelZ = ma_clamp(latestFiltered.z, minAcc, maxAcc);
 
-    float minAmp = 0.0f, maxAmp = 5.0f;
-    float minFreq = 200.f, maxFreq = 1000.f;
+    float minFreq = 100.f, maxFreq = 500.f;
+    float minAmp = 0.2f, maxAmp = 1.0f;
 
     // Amplitude from accelX
     // float amp = (accelX - minAmp) / (maxAmp - minAmp);
 
     // Frequency from accelZ
-    float t = (accelZ - minAmp) / (maxAmp - minAmp);
-    float freq = minFreq + t * (maxFreq - minFreq);
+    float amp = mapRange(fabs(accelZ), 0, maxAcc, minAmp, maxAmp);
+    float freq = mapRange(accelX, minAcc, maxAcc, minFreq, maxFreq);
 
-    // ma_waveform_set_amplitude(&sineWave, amp);
-    // ma_waveform_set_frequency(&sineWave, freq);
 
+    gOsc.nextAmp.store(amp);
     gOsc.nextFreq.store(freq);
 }
